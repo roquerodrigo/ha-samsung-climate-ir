@@ -20,6 +20,9 @@ instead of a handful of pre-learned codes.
   - Fan speeds: auto, low, medium, high, turbo
   - Swing on/off
   - **WindFree** preset (vane-closed diffuse airflow on supported units)
+- **Display switch**: a `switch` entity on the same device toggles the panel
+  light; the bit rides along in every frame, so the preference sticks across
+  mode changes and power cycles.
 - **Optional infrared receiver**: if the blaster also exposes a receiver
   entity, signals from the physical remote are decoded and mirrored into the
   entity state, keeping Home Assistant in sync.

@@ -13,4 +13,4 @@ class SamsungClimateIrDiagnosticsPayload(TypedDict):
     """Shape of the payload returned by the diagnostics handler."""
 
     entry_data: SamsungClimateIrConfigData
-    climate_states: list[JsonObject]
+    entity_states: list[JsonObject]

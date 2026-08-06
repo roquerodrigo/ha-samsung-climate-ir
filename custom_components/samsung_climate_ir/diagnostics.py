@@ -25,7 +25,7 @@ async def async_get_config_entry_diagnostics(
 ) -> SamsungClimateIrDiagnosticsPayload:
     """Return diagnostics for a config entry."""
     registry = er.async_get(hass)
-    climate_states = [
+    entity_states = [
         cast("JsonObject", state.as_dict())
         for registry_entry in er.async_entries_for_config_entry(
             registry,
@@ -36,5 +36,5 @@ async def async_get_config_entry_diagnostics(
     ]
     return {
         "entry_data": cast("SamsungClimateIrConfigData", dict(entry.data)),
-        "climate_states": climate_states,
+        "entity_states": entity_states,
     }

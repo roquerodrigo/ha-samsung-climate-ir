@@ -28,6 +28,11 @@
         }
     },
     "entity": {
+        "switch": {
+            "display": {
+                "name": "Display"
+            }
+        },
         "climate": {
             "samsung_ac": {
                 "state_attributes": {

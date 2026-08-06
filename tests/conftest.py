@@ -13,6 +13,7 @@ pytest_plugins = "pytest_homeassistant_custom_component"
 EMITTER_ENTITY_ID = "infrared.test_emitter"
 RECEIVER_ENTITY_ID = "infrared.test_receiver"
 CLIMATE_ENTITY_ID = "climate.samsung_ac"
+SWITCH_ENTITY_ID = "switch.samsung_ac_display"
 
 CONFIG_DATA = {
     "emitter_entity_id": EMITTER_ENTITY_ID,
