@@ -17,6 +17,6 @@ def build_device_info(entry_id: str) -> DeviceInfo:
     """
     return DeviceInfo(
         identifiers={(DOMAIN, entry_id)},
-        name="Samsung AC",
+        name="Samsung AC IR",
         manufacturer="Samsung",
     )
