@@ -23,6 +23,7 @@ COOL_COMMAND = {
     "fan": SamsungAcFanSpeed.AUTO,
     "swing": SamsungAcSwing.OFF,
     "fan_special": SamsungAcFanSpecial.WIND_FREE,
+    "display": False,
 }
 HEAT_COMMAND = {
     "power": True,
@@ -31,6 +32,7 @@ HEAT_COMMAND = {
     "fan": SamsungAcFanSpeed.AUTO,
     "swing": SamsungAcSwing.BOTH,
     "fan_special": SamsungAcFanSpecial.OFF,
+    "display": False,
 }
 OFF_COMMAND = {**COOL_COMMAND, "power": False}
 
@@ -43,6 +45,7 @@ def fields(command):
         command.fan,
         command.swing,
         command.fan_special,
+        command.display,
     )
 
 
@@ -109,6 +112,34 @@ def test_roundtrip_over_fan_swing_and_special(fan, swing, fan_special):
     decoded = SamsungAcCommand.from_raw_timings(command.get_raw_timings())
     assert decoded is not None
     assert fields(decoded) == fields(command)
+
+
+@pytest.mark.parametrize("display", [True, False])
+def test_roundtrip_display(display):
+    command = SamsungAcCommand(
+        power=True,
+        mode=SamsungAcMode.COOL,
+        temperature=22,
+        display=display,
+    )
+    decoded = SamsungAcCommand.from_raw_timings(command.get_raw_timings())
+    assert decoded is not None
+    assert decoded.display is display
+
+
+def test_display_sets_only_bit_4_of_byte_10():
+    base = SamsungAcCommand(power=True, mode=SamsungAcMode.COOL, temperature=22)
+    lit = SamsungAcCommand(
+        power=True, mode=SamsungAcMode.COOL, temperature=22, display=True
+    )
+    base_frame, lit_frame = base.build_frame(), lit.build_frame()
+    assert lit_frame[10] == base_frame[10] | 0b0001_0000
+    differing = [
+        index
+        for index in range(14)
+        if base_frame[index] != lit_frame[index] and index not in (1, 2, 8, 9)
+    ]
+    assert differing == [10]
 
 
 @pytest.mark.parametrize("temperature", [MIN_TEMPERATURE - 1, MAX_TEMPERATURE + 1])

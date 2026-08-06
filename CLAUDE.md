@@ -32,12 +32,19 @@ config_flow.py   → picks an infrared emitter (+ optional receiver) via
                    async_get_emitters()/async_get_receivers(); no unique_id,
                    duplicates are blocked by _async_abort_entries_match on the
                    emitter entity_id
-__init__.py      → forwards the entry to the climate platform, nothing else
+__init__.py      → creates the shared SamsungClimateIrRuntime on runtime_data
+                   and forwards the entry to the climate + switch platforms
 climate.py       → SamsungClimateIrClimate extends InfraredEmitterConsumerEntity
                    (availability tracks the emitter; _send_command() delivers an
                    InfraredCommand). SamsungClimateIrClimateWithReceiver also
                    extends InfraredReceiverConsumerEntity and decodes signals
                    from the physical remote back into entity state
+switch.py        → the panel-display switch. The protocol has no display-only
+                   command, so the switch flips runtime_data.display_on and
+                   asks the climate entity to re-send its state via the
+                   resend_state_when_on callback; receiver-decoded display
+                   changes flow back through the signal_display_updated
+                   dispatcher signal
 protocol/        → the Samsung AC IR protocol, one class per file.
                    SamsungAcCommand extends infrared_protocols.commands.Command
                    (already shipped with HA core as a dependency of the

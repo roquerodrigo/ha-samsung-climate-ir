@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from .config_data import SamsungClimateIrConfigData
 from .diagnostics_payload import SamsungClimateIrDiagnosticsPayload
+from .runtime import SamsungClimateIrRuntime
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -16,7 +17,7 @@ type JsonPrimitive = str | int | float | bool | None
 type JsonValue = JsonPrimitive | list[JsonValue] | Mapping[str, JsonValue]
 type JsonObject = Mapping[str, JsonValue]
 
-type SamsungClimateIrConfigEntry = ConfigEntry[None]
+type SamsungClimateIrConfigEntry = ConfigEntry[SamsungClimateIrRuntime]
 
 __all__ = [
     "JsonObject",
@@ -25,4 +26,5 @@ __all__ = [
     "SamsungClimateIrConfigData",
     "SamsungClimateIrConfigEntry",
     "SamsungClimateIrDiagnosticsPayload",
+    "SamsungClimateIrRuntime",
 ]

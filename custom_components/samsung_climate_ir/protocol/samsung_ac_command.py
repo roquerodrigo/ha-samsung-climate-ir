@@ -5,6 +5,7 @@ Frame layout (14 bytes, two 7-byte sections, bits sent LSB-first per byte):
   byte 6  bits 7-6: power, first copy (0b11 on, 0b00 off)
   byte 9  bits 6-4: swing
   byte 10 bits 3-1: special fan feature (WindFree, powerful, econo)
+  byte 10 bit 4: display (panel light) on
   byte 11 bits 7-4: temperature (value + 16 = deg C)
   byte 12 bits 6-4: mode, bits 3-1: fan speed
   byte 13 bits 5-4: power, second copy
@@ -110,6 +111,7 @@ class SamsungAcCommand(Command):
     fan: SamsungAcFanSpeed
     swing: SamsungAcSwing
     fan_special: SamsungAcFanSpecial
+    display: bool
 
     # A protocol value object carries one keyword-only argument per frame
     # field; splitting the constructor would hide the frame's shape.
@@ -122,6 +124,7 @@ class SamsungAcCommand(Command):
         fan: SamsungAcFanSpeed = SamsungAcFanSpeed.AUTO,
         swing: SamsungAcSwing = SamsungAcSwing.OFF,
         fan_special: SamsungAcFanSpecial = SamsungAcFanSpecial.OFF,
+        display: bool = False,
         modulation: int = 38000,
     ) -> None:
         """Initialize the Samsung AC IR command."""
@@ -140,6 +143,7 @@ class SamsungAcCommand(Command):
         self.fan = fan
         self.swing = swing
         self.fan_special = fan_special
+        self.display = display
 
     def build_frame(self) -> bytes:
         """Build the 14-byte protocol frame for this command."""
@@ -148,7 +152,7 @@ class SamsungAcCommand(Command):
         frame[6] |= power_bits << 6
         frame[13] |= power_bits << 4
         frame[9] |= self.swing << 4
-        frame[10] |= self.fan_special << 1
+        frame[10] |= (self.fan_special << 1) | (self.display << 4)
         frame[11] |= (self.temperature - MIN_TEMPERATURE) << 4
         frame[12] |= (self.mode << 4) | (self.fan << 1)
         for start in (0, _SECTION_LENGTH):
@@ -252,4 +256,5 @@ class SamsungAcCommand(Command):
             fan=fan,
             swing=swing,
             fan_special=fan_special,
+            display=bool(frame[10] >> 4 & 1),
         )

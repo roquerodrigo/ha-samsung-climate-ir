@@ -26,12 +26,11 @@ from homeassistant.components.infrared import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, STATE_UNAVAILABLE, UnitOfTemperature
 from homeassistant.core import callback
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import (
-    DOMAIN,
-)
+from .const import signal_display_updated
+from .device import build_device_info
 from .protocol import (
     MAX_TEMPERATURE,
     MIN_TEMPERATURE,
@@ -137,11 +136,7 @@ class SamsungClimateIrClimate(
     ) -> None:
         """Initialize the Samsung AC climate entity."""
         self._attr_unique_id = f"{entry.entry_id}_climate"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Samsung AC",
-            manufacturer="Samsung",
-        )
+        self._attr_device_info = build_device_info(entry.entry_id)
         self._infrared_emitter_entity_id = emitter_entity_id
         self._attr_fan_modes = [FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH, FAN_TURBO]
         self._attr_swing_modes = [SWING_OFF, SWING_ON]
@@ -157,11 +152,15 @@ class SamsungClimateIrClimate(
         self._attr_swing_mode = SWING_OFF
         self._attr_preset_mode = PRESET_NONE
         self._mode_for_frame = SamsungAcMode.COOL
+        self._runtime = entry.runtime_data
 
     @override
     async def async_added_to_hass(self) -> None:
         """Restore the assumed state, as infrared cannot read it back."""
         await super().async_added_to_hass()
+
+        self._runtime.resend_state_when_on = self._async_resend_state_when_on
+        self.async_on_remove(self._async_unregister_resend)
 
         last_state = await self.async_get_last_state()
         if last_state is None or last_state.state in (STATE_UNAVAILABLE, None):
@@ -251,6 +250,16 @@ class SamsungClimateIrClimate(
         """Turn on into the last active HVAC mode."""
         await self.async_set_hvac_mode(_PROTOCOL_MODE_TO_HA[self._mode_for_frame])
 
+    @callback
+    def _async_unregister_resend(self) -> None:
+        """Drop the resend callback registered for the display switch."""
+        self._runtime.resend_state_when_on = None
+
+    async def _async_resend_state_when_on(self) -> None:
+        """Re-send the current state, skipping when the AC is assumed off."""
+        if self._attr_hvac_mode is not HVACMode.OFF:
+            await self._async_send_current_state()
+
     async def _async_send_current_state(self) -> None:
         """Encode the entity state into a frame and send it via the emitter."""
         wind_free = self._attr_preset_mode == PRESET_WIND_FREE
@@ -281,6 +290,7 @@ class SamsungClimateIrClimate(
                 fan=fan,
                 swing=swing,
                 fan_special=fan_special,
+                display=self._runtime.display_on,
             ),
         )
 
@@ -300,6 +310,7 @@ class SamsungClimateIrClimateWithReceiver(
         """Initialize the Samsung AC climate entity with a receiver."""
         super().__init__(entry, emitter_entity_id)
         self._infrared_receiver_entity_id = receiver_entity_id
+        self._entry_id = entry.entry_id
 
     @override
     @callback
@@ -331,4 +342,7 @@ class SamsungClimateIrClimateWithReceiver(
             if command.fan_special is SamsungAcFanSpecial.WIND_FREE
             else PRESET_NONE
         )
+        if command.display != self._runtime.display_on:
+            self._runtime.display_on = command.display
+            async_dispatcher_send(self.hass, signal_display_updated(self._entry_id))
         self.async_write_ha_state()

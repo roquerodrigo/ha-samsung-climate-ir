@@ -6,12 +6,14 @@ from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
 
+from .data import SamsungClimateIrRuntime
+
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
     from .data import SamsungClimateIrConfigEntry
 
-PLATFORMS: list[Platform] = [Platform.CLIMATE]
+PLATFORMS: list[Platform] = [Platform.CLIMATE, Platform.SWITCH]
 
 
 async def async_setup_entry(
@@ -19,6 +21,7 @@ async def async_setup_entry(
     entry: SamsungClimateIrConfigEntry,
 ) -> bool:
     """Set up Samsung Climate IR from a config entry."""
+    entry.runtime_data = SamsungClimateIrRuntime()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
