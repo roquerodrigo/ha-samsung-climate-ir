@@ -1,0 +1,16 @@
+{
+  "domain": "samsung_climate_ir",
+  "name": "Samsung Climate IR",
+  "codeowners": [
+    "@roquerodrigo"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "infrared"
+  ],
+  "documentation": "https://github.com/roquerodrigo/ha-samsung-climate-ir",
+  "integration_type": "device",
+  "iot_class": "assumed_state",
+  "issue_tracker": "https://github.com/roquerodrigo/ha-samsung-climate-ir/issues",
+  "version": "0.1.0"
+}

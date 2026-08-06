@@ -1,0 +1,48 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Configurar Samsung Climate IR",
+                "description": "Escolha o emissor infravermelho que alcança o ar-condicionado Samsung. Um receptor infravermelho opcional mantém o estado sincronizado quando o controle remoto físico é usado.",
+                "data": {
+                    "emitter_entity_id": "Emissor infravermelho",
+                    "receiver_entity_id": "Receptor infravermelho (opcional)",
+                    "hvac_modes": "Modos HVAC suportados"
+                }
+            }
+        },
+        "abort": {
+            "already_configured": "Este emissor infravermelho já está configurado.",
+            "no_emitter_entities": "Nenhuma entidade de emissor infravermelho encontrada. Configure um controle infravermelho (por exemplo, um blaster IR Zigbee ou ESPHome) primeiro."
+        }
+    },
+    "selector": {
+        "hvac_modes": {
+            "options": {
+                "auto": "Automático",
+                "cool": "Refrigerar",
+                "dry": "Desumidificar",
+                "fan_only": "Ventilar",
+                "heat": "Aquecer"
+            }
+        }
+    },
+    "entity": {
+        "climate": {
+            "samsung_ac": {
+                "state_attributes": {
+                    "fan_mode": {
+                        "state": {
+                            "turbo": "Turbo"
+                        }
+                    },
+                    "preset_mode": {
+                        "state": {
+                            "wind_free": "WindFree"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

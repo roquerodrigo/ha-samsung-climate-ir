@@ -1,0 +1,48 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Set up Samsung Climate IR",
+                "description": "Pick the infrared emitter that reaches the Samsung AC. An optional infrared receiver keeps the state in sync when the physical remote is used.",
+                "data": {
+                    "emitter_entity_id": "Infrared emitter",
+                    "receiver_entity_id": "Infrared receiver (optional)",
+                    "hvac_modes": "Supported HVAC modes"
+                }
+            }
+        },
+        "abort": {
+            "already_configured": "This infrared emitter is already configured.",
+            "no_emitter_entities": "No infrared emitter entities found. Set up an infrared remote (e.g. a Zigbee or ESPHome IR blaster) first."
+        }
+    },
+    "selector": {
+        "hvac_modes": {
+            "options": {
+                "auto": "Auto",
+                "cool": "Cool",
+                "dry": "Dry",
+                "fan_only": "Fan only",
+                "heat": "Heat"
+            }
+        }
+    },
+    "entity": {
+        "climate": {
+            "samsung_ac": {
+                "state_attributes": {
+                    "fan_mode": {
+                        "state": {
+                            "turbo": "Turbo"
+                        }
+                    },
+                    "preset_mode": {
+                        "state": {
+                            "wind_free": "WindFree"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

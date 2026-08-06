@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    uses: roquerodrigo/.github/.github/workflows/ha-lint.yml@v2
+
+  tests:
+    needs: lint
+    uses: roquerodrigo/.github/.github/workflows/ha-tests.yml@v2
+
+  validate:
+    needs: lint
+    uses: roquerodrigo/.github/.github/workflows/ha-validate.yml@v2
+
+  update-pr-branch:
+    if: github.event_name == 'pull_request'
+    needs: [lint, tests, validate]
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: roquerodrigo/.github/.github/workflows/ha-update-pr-branch.yml@v2
