@@ -20,17 +20,13 @@ from homeassistant.components.climate import (
     HVACMode,
 )
 from homeassistant.components.climate.const import ATTR_FAN_MODE
-from homeassistant.components.infrared import (
-    InfraredEmitterConsumerEntity,
-    InfraredReceiverConsumerEntity,
-)
+from homeassistant.components.infrared import InfraredReceiverConsumerEntity
 from homeassistant.const import ATTR_TEMPERATURE, STATE_UNAVAILABLE, UnitOfTemperature
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import signal_display_updated
-from .device import build_device_info
+from .entity import SamsungClimateIrEntity
 from .protocol import (
     MAX_TEMPERATURE,
     MIN_TEMPERATURE,
@@ -106,20 +102,18 @@ async def async_setup_entry(
 
 
 class SamsungClimateIrClimate(
-    InfraredEmitterConsumerEntity,
+    SamsungClimateIrEntity,
     ClimateEntity,
-    RestoreEntity,
 ):
     """Samsung AC climate entity controlled via an infrared emitter."""
 
-    _attr_has_entity_name = True
     _attr_name = None
     _attr_translation_key = "samsung_ac"
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_target_temperature_step = 1.0
     _attr_min_temp = float(MIN_TEMPERATURE)
     _attr_max_temp = float(MAX_TEMPERATURE)
-    _attr_assumed_state = True
+    _unique_id_suffix = "climate"
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.FAN_MODE
@@ -135,24 +129,20 @@ class SamsungClimateIrClimate(
         emitter_entity_id: str,
     ) -> None:
         """Initialize the Samsung AC climate entity."""
-        self._attr_unique_id = f"{entry.entry_id}_climate"
-        self._attr_device_info = build_device_info(entry.entry_id)
-        self._infrared_emitter_entity_id = emitter_entity_id
+        super().__init__(entry, emitter_entity_id)
         self._attr_fan_modes = [FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH, FAN_TURBO]
         self._attr_swing_modes = [SWING_OFF, SWING_ON]
         self._attr_preset_modes = [PRESET_NONE, PRESET_WIND_FREE]
 
         config = cast("SamsungClimateIrConfigData", entry.data)
-        self._attr_hvac_modes = [HVACMode.OFF] + [
-            HVACMode(mode) for mode in config["hvac_modes"]
-        ]
+        configured_modes = [HVACMode(mode) for mode in config["hvac_modes"]]
+        self._attr_hvac_modes = [HVACMode.OFF, *configured_modes]
         self._attr_hvac_mode = HVACMode.OFF
         self._attr_target_temperature = DEFAULT_TARGET_TEMPERATURE
         self._attr_fan_mode = FAN_AUTO
         self._attr_swing_mode = SWING_OFF
         self._attr_preset_mode = PRESET_NONE
-        self._mode_for_frame = SamsungAcMode.COOL
-        self._runtime = entry.runtime_data
+        self._mode_for_frame = _HA_MODE_TO_PROTOCOL[configured_modes[0]]
 
     @override
     async def async_added_to_hass(self) -> None:
@@ -187,7 +177,8 @@ class SamsungClimateIrClimate(
 
     @override
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
-        """Set HVAC mode."""
+        """Set HVAC mode, rejecting modes excluded from the config entry."""
+        self._valid_mode_or_raise("hvac", hvac_mode, self.hvac_modes)
         if hvac_mode is not HVACMode.OFF:
             self._mode_for_frame = _HA_MODE_TO_PROTOCOL[hvac_mode]
             if (
@@ -205,9 +196,7 @@ class SamsungClimateIrClimate(
         self._attr_target_temperature = float(kwargs[ATTR_TEMPERATURE])
 
         if (hvac_mode_value := kwargs.get(ATTR_HVAC_MODE)) is not None:
-            hvac_mode = HVACMode(str(hvac_mode_value))
-            self._valid_mode_or_raise("hvac", hvac_mode, self.hvac_modes)
-            await self.async_set_hvac_mode(hvac_mode)
+            await self.async_set_hvac_mode(HVACMode(str(hvac_mode_value)))
             return
 
         if self._attr_hvac_mode is not HVACMode.OFF:
@@ -310,7 +299,6 @@ class SamsungClimateIrClimateWithReceiver(
         """Initialize the Samsung AC climate entity with a receiver."""
         super().__init__(entry, emitter_entity_id)
         self._infrared_receiver_entity_id = receiver_entity_id
-        self._entry_id = entry.entry_id
 
     @override
     @callback

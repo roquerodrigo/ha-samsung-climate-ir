@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast, override
+from typing import TYPE_CHECKING, cast, override
 
-from homeassistant.components.infrared import InfraredEmitterConsumerEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import STATE_ON, EntityCategory
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import signal_display_updated
-from .device import build_device_info
+from .entity import SamsungClimateIrEntity
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -35,9 +33,8 @@ async def async_setup_entry(
 
 
 class SamsungClimateIrDisplaySwitch(
-    InfraredEmitterConsumerEntity,
+    SamsungClimateIrEntity,
     SwitchEntity,
-    RestoreEntity,
 ):
     """
     Panel display (light) of the Samsung AC.
@@ -49,22 +46,9 @@ class SamsungClimateIrDisplaySwitch(
     next power-on frame.
     """
 
-    _attr_has_entity_name = True
     _attr_translation_key = "display"
     _attr_entity_category = EntityCategory.CONFIG
-    _attr_assumed_state = True
-
-    def __init__(
-        self,
-        entry: SamsungClimateIrConfigEntry,
-        emitter_entity_id: str,
-    ) -> None:
-        """Initialize the display switch."""
-        self._attr_unique_id = f"{entry.entry_id}_display"
-        self._attr_device_info = build_device_info(entry.entry_id)
-        self._infrared_emitter_entity_id = emitter_entity_id
-        self._runtime = entry.runtime_data
-        self._entry_id = entry.entry_id
+    _unique_id_suffix = "display"
 
     @property
     @override
@@ -90,12 +74,12 @@ class SamsungClimateIrDisplaySwitch(
         )
 
     @override
-    async def async_turn_on(self, **kwargs: Any) -> None:
+    async def async_turn_on(self, **_kwargs: object) -> None:
         """Turn the panel display on."""
         await self._async_set_display(display_on=True)
 
     @override
-    async def async_turn_off(self, **kwargs: Any) -> None:
+    async def async_turn_off(self, **_kwargs: object) -> None:
         """Turn the panel display off."""
         await self._async_set_display(display_on=False)
 
