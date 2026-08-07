@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.1.0...v1.1.1) (2026-08-07)
+
+
+### Documentation
+
+* normalize README header layout ([eeb7afb](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/eeb7afb158b0a8c6cd66c4a0365162a17774e2bd))
+
 ## [1.1.0](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.0.0...v1.1.0) (2026-08-07)
 
 
