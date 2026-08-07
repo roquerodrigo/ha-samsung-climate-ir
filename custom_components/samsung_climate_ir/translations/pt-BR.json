@@ -9,11 +9,21 @@
                     "receiver_entity_id": "Receptor infravermelho (opcional)",
                     "hvac_modes": "Modos HVAC suportados"
                 }
+            },
+            "reconfigure": {
+                "title": "Reconfigurar Samsung Climate IR",
+                "description": "Altere o emissor infravermelho, o receptor opcional ou os modos HVAC expostos pela entidade climate.",
+                "data": {
+                    "emitter_entity_id": "Emissor infravermelho",
+                    "receiver_entity_id": "Receptor infravermelho (opcional)",
+                    "hvac_modes": "Modos HVAC suportados"
+                }
             }
         },
         "abort": {
             "already_configured": "Este emissor infravermelho já está configurado.",
-            "no_emitter_entities": "Nenhuma entidade de emissor infravermelho encontrada. Configure um controle infravermelho (por exemplo, um blaster IR Zigbee ou ESPHome) primeiro."
+            "no_emitter_entities": "Nenhuma entidade de emissor infravermelho encontrada. Configure um controle infravermelho (por exemplo, um blaster IR Zigbee ou ESPHome) primeiro.",
+            "reconfigure_successful": "A reconfiguração foi concluída com sucesso."
         }
     },
     "selector": {
