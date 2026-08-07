@@ -25,6 +25,7 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
 )
 from homeassistant.core import State
+from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant_custom_component.common import mock_restore_cache
 
 from custom_components.samsung_climate_ir.protocol import (
@@ -371,3 +372,43 @@ async def test_receiver_ignores_unconfigured_mode(
     )
     await hass.async_block_till_done()
     assert hass.states.get(CLIMATE_ENTITY_ID).state == HVACMode.OFF
+
+
+async def test_turn_on_uses_first_configured_mode_when_cool_is_excluded(
+    hass, mock_send_command, enable_custom_integrations
+):
+    hass.states.async_set(EMITTER_ENTITY_ID, "idle")
+    entry = make_config_entry(hvac_modes=["heat", "dry"])
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    await call(hass, SERVICE_TURN_ON)
+
+    command = sent_command(mock_send_command)
+    assert command.power is True
+    assert command.mode is SamsungAcMode.HEAT
+    assert hass.states.get(CLIMATE_ENTITY_ID).state == HVACMode.HEAT
+
+
+async def test_set_temperature_rejects_unconfigured_hvac_mode(
+    hass, setup_integration, mock_send_command
+):
+    with pytest.raises(ServiceValidationError):
+        await call(
+            hass,
+            SERVICE_SET_TEMPERATURE,
+            **{ATTR_TEMPERATURE: 24, ATTR_HVAC_MODE: HVACMode.AUTO},
+        )
+
+    assert mock_send_command.await_count == 0
+    assert hass.states.get(CLIMATE_ENTITY_ID).state == HVACMode.OFF
+
+
+async def test_set_hvac_mode_service_rejects_unconfigured_mode(
+    hass, setup_integration, mock_send_command
+):
+    with pytest.raises(ServiceValidationError):
+        await call(hass, SERVICE_SET_HVAC_MODE, **{ATTR_HVAC_MODE: HVACMode.AUTO})
+
+    assert mock_send_command.await_count == 0
