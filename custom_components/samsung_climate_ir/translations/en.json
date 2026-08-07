@@ -9,11 +9,21 @@
                     "receiver_entity_id": "Infrared receiver (optional)",
                     "hvac_modes": "Supported HVAC modes"
                 }
+            },
+            "reconfigure": {
+                "title": "Reconfigure Samsung Climate IR",
+                "description": "Change the infrared emitter, the optional receiver or the HVAC modes exposed by the climate entity.",
+                "data": {
+                    "emitter_entity_id": "Infrared emitter",
+                    "receiver_entity_id": "Infrared receiver (optional)",
+                    "hvac_modes": "Supported HVAC modes"
+                }
             }
         },
         "abort": {
             "already_configured": "This infrared emitter is already configured.",
-            "no_emitter_entities": "No infrared emitter entities found. Set up an infrared remote (e.g. a Zigbee or ESPHome IR blaster) first."
+            "no_emitter_entities": "No infrared emitter entities found. Set up an infrared remote (e.g. a Zigbee or ESPHome IR blaster) first.",
+            "reconfigure_successful": "Reconfiguration was successful."
         }
     },
     "selector": {

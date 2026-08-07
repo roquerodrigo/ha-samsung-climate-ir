@@ -106,3 +106,31 @@ class SamsungClimateIrFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         return self.async_show_form(step_id="user", data_schema=self._schema())
+
+    async def async_step_reconfigure(
+        self,
+        user_input: dict[str, str | list[str]] | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        """Handle reconfiguration of an existing entry."""
+        if not async_get_emitters(self.hass):
+            return self.async_abort(reason="no_emitter_entities")
+
+        entry = self._get_reconfigure_entry()
+        if user_input is not None:
+            emitter_entity_id = str(user_input[CONF_EMITTER_ENTITY_ID])
+            self._async_abort_entries_match(
+                {CONF_EMITTER_ENTITY_ID: emitter_entity_id},
+            )
+            return self.async_update_reload_and_abort(
+                entry,
+                title=f"Samsung AC via {self._entity_name(emitter_entity_id)}",
+                data=user_input,
+            )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                self._schema(),
+                entry.data,
+            ),
+        )
