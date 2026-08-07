@@ -28,17 +28,23 @@ authentication**. It is a consumer of Home Assistant's native `infrared`
 domain (HA ≥ 2026.8):
 
 ```
-config_flow.py   → picks an infrared emitter (+ optional receiver) via
-                   async_get_emitters()/async_get_receivers(); no unique_id,
-                   duplicates are blocked by _async_abort_entries_match on the
-                   emitter entity_id
+config_flow.py   → user + reconfigure steps sharing one _schema() builder;
+                   entities are picked via async_get_emitters()/
+                   async_get_receivers(); no unique_id, duplicates are blocked
+                   by _async_abort_entries_match on the emitter entity_id.
+                   reconfigure prefills the current entry data and finishes
+                   with async_update_reload_and_abort
 __init__.py      → creates the shared SamsungClimateIrRuntime on runtime_data
                    and forwards the entry to the climate + switch platforms
-climate.py       → SamsungClimateIrClimate extends InfraredEmitterConsumerEntity
-                   (availability tracks the emitter; _send_command() delivers an
-                   InfraredCommand). SamsungClimateIrClimateWithReceiver also
-                   extends InfraredReceiverConsumerEntity and decodes signals
-                   from the physical remote back into entity state
+entity.py        → SamsungClimateIrEntity, the base every platform entity
+                   extends (InfraredEmitterConsumerEntity + RestoreEntity):
+                   unique_id and device_info are @property, derived from the
+                   entry (<entry_id>_<suffix> via _unique_id_suffix)
+climate.py       → SamsungClimateIrClimate (availability tracks the emitter;
+                   _send_command() delivers an InfraredCommand).
+                   SamsungClimateIrClimateWithReceiver also extends
+                   InfraredReceiverConsumerEntity and decodes signals from the
+                   physical remote back into entity state
 switch.py        → the panel-display switch. The protocol has no display-only
                    command, so the switch flips runtime_data.display_on and
                    asks the climate entity to re-send its state via the
@@ -54,7 +60,9 @@ protocol/        → the Samsung AC IR protocol, one class per file.
 The entity state is **assumed** (IR is one-way) and restored via
 `RestoreEntity`. Every service call re-encodes the *entire* entity state into
 one frame — the Samsung protocol has no incremental commands. `_mode_for_frame`
-keeps the last non-off mode so power-off/power-on frames carry a valid mode.
+keeps the last non-off mode so power-off/power-on frames carry a valid mode; it
+starts at the first configured mode and `async_set_hvac_mode` validates against
+the configured modes, so it can never hold a mode the user excluded.
 
 ### Protocol invariants (validated against a physical remote)
 
