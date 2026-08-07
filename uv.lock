@@ -1061,7 +1061,7 @@ lint = [
 [package.metadata.requires-dev]
 dev = [
     { name = "homeassistant", specifier = "==2026.8.0" },
-    { name = "infrared-protocols", specifier = "==8.2.1" },
+    { name = "infrared-protocols", specifier = "==9.0.0" },
     { name = "pre-commit", specifier = "==4.6.1" },
     { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.4.0" },
@@ -1277,11 +1277,11 @@ wheels = [
 
 [[package]]
 name = "infrared-protocols"
-version = "8.2.1"
+version = "9.0.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/87/51/fabbf36b16e968a81c843ee4e5fc06a02af375f6d94d4b31d7c640026e41/infrared_protocols-8.2.1.tar.gz", hash = "sha256:a5371e2ca412fbb85e8b53d6cb4a5754c4a0e73ff9d77f5efc31a864f0adccc1", size = 29583, upload-time = "2026-07-28T17:07:21.01Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8b/aa/fb324f9072974ef77004334ae46eec0498f4448bcb653799ce7291fb8c3c/infrared_protocols-9.0.0.tar.gz", hash = "sha256:3734faf7faf382f20c310905cd2548a3a14c6f0b9d62625b34b1782839f1ea3b", size = 30501, upload-time = "2026-08-03T10:09:10.203Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e7/77/b7d628ef1d74747175a08493bebd49cfc95c397dfd52e667af68d23e05b7/infrared_protocols-8.2.1-py3-none-any.whl", hash = "sha256:dcb6eb0062302612e9ebb92e915605d4016a10b3f7fae218e98f3d2809817523", size = 46976, upload-time = "2026-07-28T17:07:19.608Z" },
+    { url = "https://files.pythonhosted.org/packages/09/c7/3824d41eb8fac446b6d272c5e4a3fe47cc7f9f0d434ff59e7989f2591d31/infrared_protocols-9.0.0-py3-none-any.whl", hash = "sha256:84d9236bc43991d11df4ff884caa1f154edc5d9bb92cac5b15c804f64f80a73f", size = 47732, upload-time = "2026-08-03T10:09:09.107Z" },
 ]
 
 [[package]]

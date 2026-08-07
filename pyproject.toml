@@ -15,7 +15,7 @@ package = false
 [dependency-groups]
 dev = [
     "homeassistant==2026.8.0",
-    "infrared-protocols==8.2.1",
+    "infrared-protocols==9.0.0",
     "pre-commit==4.6.1",
     "pytest==9.0.3",
     "pytest-asyncio==1.4.0",
