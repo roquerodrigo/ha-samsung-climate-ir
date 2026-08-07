@@ -16,53 +16,80 @@ run `uv run ruff format --check .`, `uv run ruff check .` and
 - User-facing strings live in `custom_components/samsung_climate_ir/translations/{en,pt-BR}.json`
   only — never hardcoded in Python.
 
+## Architecture in one paragraph
+
+This integration has **no API client, no coordinator, no polling, no
+authentication, no options flow and no repairs** — deliberately. It consumes
+Home Assistant's native `infrared` domain (HA ≥ 2026.8): the climate entity
+encodes its whole state into one IR frame and hands it to an emitter entity.
+State is **assumed** (IR is one-way) and restored across restarts. Do not add
+coordinator/API scaffolding here; there is no upstream to poll or authenticate
+against.
+
 ## File organization
 
-- **One top-level class per file — including TypedDicts and dataclasses.**
-  Multiple semantically related classes (exception families, sensor entities
-  for one platform, the typed payloads and runtime data) get grouped into a
-  package directory with one class per submodule and an `__init__.py`
-  re-exporting the public symbols.
-  - Example: `exceptions/` contains `api_client_error.py`,
-    `api_client_communication_error.py`, `api_client_authentication_error.py`,
-    plus `__init__.py`.
-  - Example: `data/` contains `post.py`, `config_data.py`, `options_data.py`,
-    `diagnostics_entry.py`, `diagnostics_payload.py`, `runtime.py`, plus an
-    `__init__.py`. Every TypedDict and dataclass gets its own file — a flat
-    multi-class `data.py` is migration debt, not a valid layout.
+- `__init__.py` wires `async_setup_entry` and `async_unload_entry` and nothing
+  else.
+- `config_flow.py` carries the `user` and `reconfigure` steps, both sharing the
+  `_schema()` builder. The flow sets **no unique ID**: duplicates are blocked by
+  `_async_abort_entries_match` on the emitter entity id.
+- `const.py` holds `DOMAIN`, the `CONF_*` keys, the package `LOGGER` and the
+  dispatcher-signal factory `signal_display_updated`.
+- `device.py` builds the shared `DeviceInfo` (`build_device_info`).
+- `entity.py` holds `SamsungClimateIrEntity`, the base class every platform
+  entity extends.
+- `climate.py` and `switch.py` hold one entity class per concrete entity
+  (`SamsungClimateIrClimate`, `SamsungClimateIrClimateWithReceiver`,
+  `SamsungClimateIrDisplaySwitch`).
+- `diagnostics.py` returns the `SamsungClimateIrDiagnosticsPayload`.
+- **`data/` is a package, one class per submodule**: `config_data.py`
+  (`SamsungClimateIrConfigData`), `runtime.py` (`SamsungClimateIrRuntime`),
+  `diagnostics_payload.py` (`SamsungClimateIrDiagnosticsPayload`). A flat
+  multi-class `data.py` is migration debt, not a valid layout.
 - **`type` aliases are the exception: they live in `data/__init__.py`**
   alongside the re-exports (`JsonPrimitive`, `JsonValue`, `JsonObject`,
   `SamsungClimateIrConfigEntry`), not in their own files.
+- **`protocol/` is a package, one class per submodule**: `SamsungAcCommand`,
+  `SamsungAcMode`, `SamsungAcFanSpeed`, `SamsungAcFanSpecial`,
+  `SamsungAcSwing`. `protocol/__init__.py` re-exports the public symbols plus
+  `MIN_TEMPERATURE`/`MAX_TEMPERATURE`.
 - **Helper functions** may live in the same file as the single class that uses
-  them (e.g. `_verify_response_or_raise` in `api.py`).
-- **`__init__.py` of the integration package** wires `async_setup_entry`,
-  `async_unload_entry`, `async_reload_entry` and nothing else.
+  them; module-level lookup tables (`_HA_MODE_TO_PROTOCOL` and friends) stay in
+  the platform module that uses them.
 
-## Entities: one class per entity
+## Entities
 
-- **One class per entity.** Every entity gets its own dedicated class — never
-  share a generic class parameterized by an `EntityDescription` subclass with
-  callable fields like `value_fn` or `action_fn`. Encode the entity's behaviour
-  directly in its class via `@property` and class-level `_attr_*` constants
-  (or a plain `EntityDescription` instance assigned at the class level).
-  - Don't write an `<DOMAIN><Platform>Description` subclass with a
-    `value_fn` / `action_fn` field.
-  - Do write `<DOMAIN><Name><Platform>` (e.g. `SamsungClimateIrStatusSensor`,
-    `SamsungClimateIrCancelButton`, `SamsungClimateIrDoorBinarySensor`).
-- The reason: each entity is a discrete contract; mixing them through a
-  generic class hides the contract behind indirection and discourages per-entity
-  refinement (icons, state attributes, custom logic).
+- **One class per entity.** Encode each entity's behaviour directly in its
+  class — never a generic class parameterized by an `EntityDescription`
+  subclass with callable fields like `value_fn` or `action_fn`.
+- **Every platform entity extends `SamsungClimateIrEntity`** (`entity.py`),
+  which centralizes what the entry's entities share: the emitter entity id, the
+  `SamsungClimateIrRuntime`, `_attr_has_entity_name`, `_attr_assumed_state`,
+  and the entity identity.
+- **Identity is computed, state is stored.** `unique_id` and `device_info` are
+  `@property` methods on the base class, derived from the config entry
+  (`<entry_id>_<suffix>` via the class-level `_unique_id_suffix`, and
+  `build_device_info`). The **mutable assumed state**, on the other hand, is
+  deliberately kept in `_attr_*` fields written in `__init__` and by the
+  service handlers (`_attr_hvac_mode`, `_attr_fan_mode`, …): this is an
+  assumed-state integration, the entity itself *is* the source of truth, and
+  properties would have nothing to compute the state from. That documented
+  exception applies to state only — never to identity.
+- Every service handler validates its input before mutating state:
+  `async_set_hvac_mode` rejects modes excluded from the config entry via
+  `_valid_mode_or_raise`, which raises `ServiceValidationError` with the HA
+  translation. `_mode_for_frame` is initialized from the first configured mode
+  and only ever holds configured modes, so `turn_on` cannot power the AC into a
+  mode the user excluded.
 
 ## Naming
 
-- Public classes are prefixed with `SamsungClimateIr` (rename to
-  `<YourDomain>` when forking).
+- Public classes are prefixed with `SamsungClimateIr`; protocol classes with
+  `SamsungAc`.
 - Concrete platform entities end with the entity type:
-  `SamsungClimateIrSensor`, `SamsungClimateIrBinarySensor`,
-  `SamsungClimateIrSwitch`.
-- Exception classes end with `Error`: `SamsungClimateIrApiClientError`,
-  `…CommunicationError`, `…AuthenticationError`.
+  `SamsungClimateIrClimate`, `SamsungClimateIrDisplaySwitch`.
 - Private attributes / functions are prefixed with `_`.
+- Avoid abbreviations; spell names out.
 
 ## Typing
 
@@ -73,33 +100,35 @@ Banned: `typing.Any`, `object` as a value type, bare `dict` / `list` / `tuple` /
 
 Required:
 
-- `TypedDict` for known dict / JSON shapes (see the `data/` package for the
-  canonical examples: `SamsungClimateIrPost`, `SamsungClimateIrConfigData`,
-  `SamsungClimateIrOptionsData`, `SamsungClimateIrDiagnosticsPayload`,
-  one per file).
-- `@dataclass` for structured records (`SamsungClimateIrData` in
+- `TypedDict` for known dict / JSON shapes (see the `data/` package:
+  `SamsungClimateIrConfigData`, `SamsungClimateIrDiagnosticsPayload` — one per
+  file).
+- `@dataclass` for structured records (`SamsungClimateIrRuntime` in
   `data/runtime.py`).
 - Named `type` aliases for recursive / shared shapes — `JsonPrimitive`,
   `JsonValue`, `JsonObject` in `data/__init__.py`.
 - `frozenset[str]` / `tuple[str, ...]` for fixed string collections.
 - `cast("TypedDictName", value)` at HA framework boundaries that hand us a
-  permissive type (e.g. `entry.data` is `MappingProxyType[str, Any]`).
-
-When narrowing an HA-provided callback signature (e.g. `async_step_user`),
-mypy reports `[override]` (Liskov violation). Add `# type: ignore[override]`
-with a one-line comment explaining the deliberate narrowing — see
-`config_flow.py` for the canonical example.
+  permissive type (e.g. `entry.data` is a read-only mapping typed
+  `Mapping[str, Any]`; the platforms cast it to
+  `SamsungClimateIrConfigData`).
+- HA callback signatures that require `**kwargs` we do not consume are typed
+  `**_kwargs: object` (see `switch.py`) — the one place `object` is acceptable,
+  because the values are never read.
 
 ## Properties and `__init__`
 
-- **Always prefer `@property`** over assigning `_attr_*` values in `__init__`.
-  Properties are computed lazily from backing fields stored on the parent class
-  (e.g. `self.coordinator`, `self.entity_description`).
+- **Prefer `@property` for anything derived from stable backing fields** —
+  entity identity (`unique_id`, `device_info` in `entity.py`) and views over
+  shared runtime state (`is_on` in `switch.py` reads
+  `self._runtime.display_on`).
+- Mutable assumed state is the documented exception and lives in `_attr_*`
+  fields (see the Entities section).
 - When the body of `__init__` would only call `super().__init__(...)`, omit
-  `__init__` entirely and let Python inherit the parent.
-- Class-level constants like `_attr_attribution = ATTRIBUTION` and
-  `_attr_has_entity_name = True` are fine — they don't depend on instance
-  state.
+  `__init__` entirely and let Python inherit the parent —
+  `SamsungClimateIrDisplaySwitch` has no `__init__` for exactly that reason.
+- Class-level constants like `_attr_has_entity_name = True` are fine — they
+  don't depend on instance state.
 
 ## Imports
 
@@ -114,14 +143,15 @@ with a one-line comment explaining the deliberate narrowing — see
   from typing import TYPE_CHECKING
 
   if TYPE_CHECKING:
-      from collections.abc import Mapping
+      from homeassistant.core import HomeAssistant
+
       from .data import SamsungClimateIrConfigData
   ```
 
 - `noqa` comments are reserved for unavoidable framework constraints (e.g.
-  `# noqa: ARG001` for HA-framework callback parameters that must exist but go
-  unused). Document the reason inline if non-obvious. Never silence to "make
-  ruff happy" — fix the underlying code.
+  `# noqa: ARG001` on the unused `hass` parameter that HA's platform-setup
+  signature requires). Document the reason inline if non-obvious. Never silence
+  to "make ruff happy" — fix the underlying code.
 
 ## Docstrings
 
@@ -135,117 +165,85 @@ with a one-line comment explaining the deliberate narrowing — see
 ## Comments
 
 - Default to **no comments**. Add one only when the *why* is not obvious from
-  the code: a hidden constraint, a workaround, a subtle invariant, or a
-  deliberate type-system override.
+  the code: a hidden constraint, a workaround, a subtle invariant (the WindFree
+  incompatibility table in `climate.py` is the canonical example).
 - Never describe *what* the code does — well-named identifiers handle that.
-- **No section dividers** like `# --- API payloads ---` to group related
-  declarations. If a file has so many sections that you feel the need for
-  visual separators, split it into multiple files instead.
+- **No section dividers** like `# --- helpers ---`. If a file needs visual
+  separators, split it into multiple files instead.
 
 ## Logging
 
-- Each module uses the package-level `LOGGER` from `const.py`
-  (`LOGGER: Logger = getLogger(__package__)`); never call `logging.getLogger(...)`
-  ad-hoc.
-- Use **lazy `%`-formatting**, never f-strings — they force string interpolation
-  even when the level is filtered:
+- Any module that logs uses the package-level `LOGGER` from `const.py`
+  (`LOGGER: Logger = getLogger(__package__)`); never call
+  `logging.getLogger(...)` ad-hoc.
+- Use **lazy `%`-formatting**, never f-strings:
 
   ```python
-  LOGGER.warning("Refresh failed: %s", exception)   # ✓
-  LOGGER.warning(f"Refresh failed: {exception}")    # ✗
+  LOGGER.warning("Failed to decode signal: %s", exception)   # ✓
+  LOGGER.warning(f"Failed to decode signal: {exception}")    # ✗
   ```
 
-- Levels:
-  - `debug` — successful fetch summaries, every-poll diagnostics.
-  - `info` — one-shot lifecycle (setup complete, reauth flow started).
-  - `warning` — recoverable failures (transient API error, falling back).
-  - `error` / `exception` — unrecoverable in current cycle; pair `exception`
-    with caught exceptions inside `except` blocks for full tracebacks.
-- Never log secrets (`token`, `password`, `key`, full headers). The
-  `Coordinator → UpdateFailed` mapping should swallow the original exception's
-  string form when it could expose them.
+- Message format: `"Failed to <verb> <object>: <cause>"` — short and grep-able.
 
-## Error messages
+## Runtime data
 
-- Format: `"Failed to <verb> <object>: <cause>"` where `<cause>` is the
-  exception or a short reason. Keep them short and grep-able.
-- Pre-validate inputs before the network call so user-facing errors point at
-  the bad input, not a downstream traceback (`config_flow._validate` rejects
-  malformed credentials before contacting the API).
-- Custom exceptions get the same hierarchy:
-  `SamsungClimateIrApiClientError` (base) → `…CommunicationError` (timeout,
-  connection, DNS) and `…AuthenticationError` (401/403). Wrap raw upstream
-  errors at the API client boundary; everything above only catches the
-  custom hierarchy.
+- All cross-entity state flows through
+  `entry.runtime_data: SamsungClimateIrRuntime` (`data/runtime.py`). Never
+  store integration state in `hass.data` — `runtime_data` is auto-discarded on
+  unload, the legacy `hass.data[DOMAIN][entry_id]` pattern is not.
+- The runtime couples the display switch to the climate entity: the IR
+  protocol has no display-only command, so the switch flips
+  `runtime.display_on` and asks the climate entity to re-send its whole state
+  through the `resend_state_when_on` callback. Receiver-decoded display
+  changes flow the other way through the `signal_display_updated` dispatcher
+  signal.
 
-## Coordinator and runtime data
+## Config flow / diagnostics
 
-- All API state flows through `entry.runtime_data: SamsungClimateIrData`
-  (`data/runtime.py`). Never store integration state in `hass.data` — `runtime_data` is
-  auto-discarded on unload, the legacy `hass.data[DOMAIN][entry_id]` pattern is
-  not.
-- The coordinator is typed as `DataUpdateCoordinator[SamsungClimateIrPost]`
-  (or whatever your real payload TypedDict is). `_async_update_data` returns
-  the typed payload.
-- Use `await coordinator.async_config_entry_first_refresh()` during
-  `async_setup_entry` (not `async_refresh()`) — a failed first refresh raises
-  `ConfigEntryNotReady` and HA retries with backoff automatically.
-- Pass `always_update=False` to the coordinator when the payload TypedDict
-  compares cleanly with `__eq__`; HA then skips listener callbacks and state
-  writes when the data hasn't changed.
-- Use `self.async_contexts()` inside `_async_update_data` to scope API work to
-  the entities currently subscribed — disabled entities shouldn't drive
-  network calls.
-- Error mapping inside `_async_update_data`:
-  - Communication errors → `raise UpdateFailed("Failed to …: %s" % err)`. Pass
-    `retry_after=<seconds>` when the upstream signals an explicit backoff (e.g.
-    HTTP 429 `Retry-After`).
-  - Authentication errors → `raise ConfigEntryAuthFailed(...)` — HA cancels
-    further updates and starts the `SOURCE_REAUTH` flow.
-  - Never let raw upstream exception strings reach `UpdateFailed` when they
-    could carry tokens; convert to a sanitized message at the API client.
+- `config_flow.py` carries the `user` and `reconfigure` steps sharing one
+  `_schema()` builder; `reconfigure` prefills the current entry data via
+  `add_suggested_values_to_schema` and finishes with
+  `async_update_reload_and_abort`, so changing the emitter, receiver or HVAC
+  modes never requires deleting the entry.
+- There is no options flow: every setting the integration has belongs to the
+  device's identity and is edited through reconfigure.
+- `diagnostics.py` returns `SamsungClimateIrDiagnosticsPayload` (entry data
+  plus the entry's entity states). The config carries no secrets, so nothing
+  is redacted — add a `TO_REDACT` constant the day a sensitive key appears.
 
-## Config / options / repairs / diagnostics
+## Protocol invariants
 
-- `config_flow.py` carries `user`, `reauth`, `reauth_confirm` and `reconfigure`
-  steps, all sharing one `_validate` helper and one `_credentials_schema`
-  builder.
-- `options_flow.py` holds the single `SamsungClimateIrOptionsFlow`
-  class. New options keys go into the `SamsungClimateIrOptionsData`
-  TypedDict in `data/options_data.py`.
-- `repairs.py` exposes `async_create_fix_flow`. Sample helpers like
-  `async_raise_deprecated_api_issue` show how to register issues from anywhere
-  in the integration.
-- `diagnostics.py` returns `SamsungClimateIrDiagnosticsPayload`. Sensitive
-  keys go into the `TO_REDACT: frozenset[str]` constant.
+`protocol/samsung_ac_command.py` was validated byte-for-byte against codes
+captured from a physical Samsung remote (golden tests in
+`tests/protocol/test_samsung_ac_command.py`, captured timing arrays in
+`tests/protocol_fixtures.py`). Do **not** change the template frame, field
+offsets, checksum algorithm or timing constants without new physical captures
+proving the change.
 
 ## Translations
 
 - Two locales: `en.json` and `pt-BR.json`. `tests/test_translations.py`
   parametrizes over every locale and fails if their nested key sets diverge.
-- Issue strings live under `issues.<issue_id>`; options strings under
-  `options.step.init.data`; flow strings under `config.step.<step_id>`;
-  entity names under `entity.<platform>.<key>.name`.
+- Flow strings live under `config.step.<step_id>`; abort reasons under
+  `config.abort`; selector labels under `selector.<key>.options`; entity names
+  under `entity.<platform>.<key>.name`.
 
 ## HACS publishing requirements
 
 [HACS](https://www.hacs.xyz/docs/publish/integration/) validates the repository
-shape on every push via `hacs/action@main` (and HA itself runs `hassfest`).
-Both gates must stay green:
+shape on every push (and HA itself runs `hassfest`). Both gates must stay
+green:
 
 - **One integration per repository**, located in `custom_components/<domain>/`.
 - `manifest.json` must declare `domain`, `name`, `version`, `documentation`,
   `issue_tracker`, `codeowners`. The `version` key is **mandatory for custom
-  integrations** (omit it in core integrations only) and must parse as
-  `AwesomeVersion` — CalVer or SemVer.
+  integrations** and must parse as `AwesomeVersion` — CalVer or SemVer.
 - `hacs.json` at the repo root pins the minimum HA core via the
-  `homeassistant` key. This is the third HA pin (see `CLAUDE.md`).
-- Brand assets live under `custom_components/<domain>/brand/` — `icon.png`,
-  `logo.png` (+ `@2x` variants) and `icon.svg`. The blueprint ships **obvious
-  `TODO` placeholders** (a slate box stamped `TODO / replace me`), not sample
-  artwork: they keep the HACS `brands` check green while making it impossible to
-  mistake them for the real brand. Replace every file per integration and
-  register the assets in
+  `homeassistant` key — **2026.8.0** here, because of the `infrared` domain;
+  do not lower it. This is one of the three HA pins (see `CLAUDE.md`).
+- Brand assets live under `custom_components/samsung_climate_ir/brand/` —
+  `icon.png`, `logo.png` (+ `@2x` variants) and `icon.svg` — and are also
+  registered in
   [home-assistant/brands](https://github.com/home-assistant/brands).
 - A `README.md` at the repo root is required; HACS surfaces it as the
   integration description.
@@ -255,17 +253,16 @@ most recent GitHub releases to users, so keep the changelog grep-able.
 
 ## Pre-commit hooks
 
-`pre-commit` is a dev dependency (`pyproject.toml`) and `.pre-commit-config.yaml`
-mirrors the lint commands (ruff format, ruff check). Install once per
-clone:
+`pre-commit` is a dev dependency (`pyproject.toml`) and
+`.pre-commit-config.yaml` runs the same ruff gates as CI on every commit.
+Install once per clone:
 
 ```bash
 pre-commit install
 ```
 
-The hook runs the same gates as CI on every commit. Skip it only on
-emergency `git commit --no-verify` and immediately re-run `uv run ruff format --check .`
-and `uv run ruff check .`.
+Skip it only on emergency `git commit --no-verify` and immediately re-run
+`uv run ruff format --check .` and `uv run ruff check .`.
 
 ## Conventional commits
 
@@ -285,19 +282,17 @@ which `release-please` parses to bump the version and generate `CHANGELOG.md`:
 | `chore` | Anything else (rarely) | none |
 
 - Subject line: imperative mood, lowercase, no trailing period.
-- Use scopes when useful: `fix(sensor): map non-enum interface values to None`.
+- Use scopes when useful: `fix(climate): reject unconfigured hvac modes`.
 - A `BREAKING CHANGE:` footer (or `!` after type) bumps the major version.
 
 ## Linting and verification
 
 - Ruff configuration lives in `pyproject.toml` (`[tool.ruff]`) with `select = ["ALL"]`.
-- Mypy configuration lives in `pyproject.toml` (`[tool.mypy]`). Run both with
-  `uv run ruff check .` and `uv run mypy custom_components/samsung_climate_ir`.
+- Mypy configuration lives in `pyproject.toml` (`[tool.mypy]`).
 - After every change run `uv run ruff format --check .`, `uv run ruff check .`,
   `uv run mypy custom_components/samsung_climate_ir` and `uv run pytest`.
   Both gates mirror CI.
 - Tests live in `tests/`, mirroring the production layout. The 90 % coverage
   gate (`pyproject.toml`, `[tool.pytest.ini_options]`) prevents untested code
-  from sneaking in. When a test
-  exercises a state that is impossible under the new types, update or remove
-  it — never weaken the type to satisfy the test.
+  from sneaking in. When a test exercises a state that is impossible under the
+  new types, update or remove it — never weaken the type to satisfy the test.

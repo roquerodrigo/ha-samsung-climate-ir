@@ -58,6 +58,9 @@ Settings → Devices & Services → Add Integration → **Samsung Climate IR**.
 | Infrared receiver | Optional `infrared` receiver used to track the physical remote |
 | Supported HVAC modes | Which modes the entity exposes besides *off* |
 
+All three settings can be changed later without recreating the entry:
+open the integration entry menu and pick **Reconfigure**.
+
 ## Protocol notes
 
 Frames are generated from a template captured from a physical Samsung remote:
