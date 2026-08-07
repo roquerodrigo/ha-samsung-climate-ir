@@ -3,6 +3,10 @@
 [![CI](https://github.com/roquerodrigo/ha-samsung-climate-ir/actions/workflows/ci.yml/badge.svg)](https://github.com/roquerodrigo/ha-samsung-climate-ir/actions/workflows/ci.yml)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
+[![Open your Home Assistant instance and open the repository inside HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=roquerodrigo&repository=ha-samsung-climate-ir&category=integration)
+
+---
+
 Home Assistant custom integration that controls **Samsung air conditioners over
 infrared**, through any entity of Home Assistant's native `infrared` domain —
 a Zigbee IR blaster exposed by Zigbee2MQTT, an ESPHome remote transmitter, or
