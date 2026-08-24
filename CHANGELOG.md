@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.1.0...v1.2.0) (2026-08-24)
+
+
+### Features
+
+* **hacs:** ship the install zip with every release ([07c0cb3](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/07c0cb389fd7bff9d01ea19bf1687a90c444ea6d))
+
+
+### Development Dependencies
+
+* **deps-dev:** bump the python-development group across 1 directory with 3 updates ([57371a9](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/57371a9810f79154136c98e4f6e8d0d79639e9b8))
+
+
+### Documentation
+
+* normalize README header layout ([eeb7afb](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/eeb7afb158b0a8c6cd66c4a0365162a17774e2bd))
+
 ## [1.1.0](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.0.0...v1.1.0) (2026-08-07)
 
 
