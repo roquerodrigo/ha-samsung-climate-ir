@@ -3,6 +3,8 @@
 [![CI](https://github.com/roquerodrigo/ha-samsung-climate-ir/actions/workflows/ci.yml/badge.svg)](https://github.com/roquerodrigo/ha-samsung-climate-ir/actions/workflows/ci.yml)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/roquerodrigo)
+
 [![Open your Home Assistant instance and open the repository inside HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=roquerodrigo&repository=ha-samsung-climate-ir&category=integration)
 
 ---
@@ -75,3 +77,7 @@ per-section bit-count checksum. Signals encode as a 550/17550 µs header and two
 
 The decoder tolerates receiver skew, so captures from real remotes decode back
 into typed commands — that is what powers the receiver-based state sync.
+
+## Support
+
+This integration is built and maintained on personal time, on hardware bought for the purpose. If it is useful to you, consider [sponsoring the work](https://github.com/sponsors/roquerodrigo) — it keeps the devices, the testing and the releases coming.
