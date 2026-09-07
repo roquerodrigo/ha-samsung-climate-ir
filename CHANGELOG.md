@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.1](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.2.0...v1.2.1) (2026-09-07)
+
+
+### Development Dependencies
+
+* **deps-dev:** bump ruff ([ef45bd0](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/ef45bd0b0794eb240cec20dc28b16000b3d2116f))
+
+
+### Documentation
+
+* add GitHub Sponsors button and support section ([1cffad8](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/1cffad8baf2faeb924581bcc5daef85c6b19f9ab))
+
 ## [1.2.0](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.1.0...v1.2.0) (2026-08-24)
 
 
