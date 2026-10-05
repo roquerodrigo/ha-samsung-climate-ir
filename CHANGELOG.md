@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.2.1](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.2.0...v1.2.1) (2026-10-05)
+
+
+### Dependencies
+
+* **deps:** bump urllib3 from 2.7.0 to 2.8.0 ([f4fee01](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/f4fee018af330014ed44e1b1e4e0abe083750471))
+* **deps:** bump virtualenv from 21.7.1 to 21.7.13 ([5e5719c](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/5e5719cd7b139e9a3244f05c22613c93d9c32a82))
+
+
+### Development Dependencies
+
+* **deps-dev:** bump ruff ([ef45bd0](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/ef45bd0b0794eb240cec20dc28b16000b3d2116f))
+* **deps-dev:** bump ruff in the python-development group ([6daed80](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/6daed80909836ed5435067e0423fb3ab576cfe41))
+* **deps-dev:** bump ruff in the python-development group ([9ff2576](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/9ff2576037e770b4f9c3439b1842f5417c061557))
+* **deps-dev:** bump ruff in the python-development group ([761a11d](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/761a11d2a89b3505d29c4363b2c67bc77e93b813))
+* **deps-dev:** bump the python-development group with 2 updates ([7f08ffb](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/7f08ffb44eef03703ceca3a7ebfb11fd5ca6e14b))
+
+
+### Documentation
+
+* add GitHub Sponsors button and support section ([1cffad8](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/1cffad8baf2faeb924581bcc5daef85c6b19f9ab))
+
+
+### Build System
+
+* **release:** bump uv.lock through release-please ([65511d5](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/65511d5f874e7c71a7ec7ed1ea416f95d33925c3))
+
 ## [1.2.0](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.1.0...v1.2.0) (2026-08-24)
 
 
