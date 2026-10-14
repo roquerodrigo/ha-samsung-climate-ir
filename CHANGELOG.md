@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.2.0...v1.2.1) (2026-10-14)
+
+
+### Miscellaneous Chores
+
+* **release:** keep only user-facing changes in the changelog ([dd1719a](https://github.com/roquerodrigo/ha-samsung-climate-ir/commit/dd1719a93bbc6d69d2c6b7a1a331b32e0e33c2c8))
+
 ## [1.2.0](https://github.com/roquerodrigo/ha-samsung-climate-ir/compare/v1.1.0...v1.2.0) (2026-08-24)
 
 
