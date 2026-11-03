@@ -46,8 +46,12 @@ updates:
           - "minor"
           - "patch"
     ignore:
-      # Dependabot should not update Home Assistant as that should match the homeassistant key in hacs.json
+      # Home Assistant and its test harness are bumped together by hand: the
+      # pin tracks the ``homeassistant`` key in hacs.json, and each
+      # pytest-homeassistant-custom-component release pins one exact Home
+      # Assistant along with pytest, pytest-asyncio and pytest-cov.
       - dependency-name: "homeassistant"
+      - dependency-name: "pytest-homeassistant-custom-component"
       # infrared-protocols belongs to Home Assistant's own infrared component,
       # which pins it exactly. Home Assistant installs that pin at runtime, so
       # this one has to move with the pinned Home Assistant version rather than
