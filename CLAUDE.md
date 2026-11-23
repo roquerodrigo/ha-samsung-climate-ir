@@ -66,7 +66,9 @@ emitter entity id.
 ## Three Home Assistant version pins
 
 1. `pyproject.toml` dev dependency `homeassistant==X` (with the matching
-   `pytest-homeassistant-custom-component`).
+   `pytest-homeassistant-custom-component`, and `infrared-protocols` at the
+   exact version that HA release's `infrared` component pins). Dependabot
+   ignores all three, so bump them together by hand.
 2. `hacs.json` `homeassistant` minimum — **2026.8.0** because of the
    `infrared` domain; do not lower it.
 3. CI runs against the pinned dev dependency.
