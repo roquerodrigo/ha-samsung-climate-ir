@@ -255,7 +255,8 @@ GitHub releases to users, so keep the changelog grep-able.
 ## Pre-commit hooks
 
 `pre-commit` is a dev dependency (`pyproject.toml`) and
-`.pre-commit-config.yaml` runs the same ruff gates as CI on every commit.
+`.pre-commit-config.yaml` runs the same ruff and mypy gates as CI on every
+commit.
 Install once per clone:
 
 ```bash
