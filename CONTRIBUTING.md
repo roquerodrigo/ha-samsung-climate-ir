@@ -1,55 +1,82 @@
-# Contribution guidelines
+# Contributing
 
-Contributing to this project should be as easy and transparent as possible, whether it's:
+Bug reports, ideas and pull requests are welcome.
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
+## Reporting a bug
 
-## Github is used for everything
+Open an [issue](https://github.com/roquerodrigo/ha-samsung-climate-ir/issues/new/choose)
+with:
 
-Github is used to host code, to track issues and feature requests, as well as accept pull requests.
+- the Home Assistant version, the integration version, the AC model and the
+  IR blaster you use;
+- what you did, what you expected and what happened;
+- the diagnostics downloaded from the integration's menu and the relevant log
+  lines.
 
-Pull requests are the best way to propose changes to the codebase.
+## Development setup
 
-1. Fork the repo and create your branch from `main`.
-2. If you've changed something, update the documentation.
-3. Make sure your code lints (run `uv run ruff format --check .`, `uv run ruff check .` and `uv run mypy custom_components/samsung_climate_ir`).
-4. Test your contribution.
-5. Issue that pull request!
+The project uses [uv](https://docs.astral.sh/uv/) and Python 3.14.
 
-## Any contributions you make will be under the MIT Software License
+```bash
+scripts/setup      # install the dependencies into .venv
+scripts/develop    # run Home Assistant at http://localhost:8123 with this integration loaded
+```
 
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
+`scripts/develop` uses the configuration in [`config/`](config/), which turns
+on debug logging for the integration. The integration needs an infrared
+emitter entity, so set one up in that instance before adding it.
 
-## Report bugs using Github's [issues](../../issues)
+## Checks
 
-GitHub issues are used to track public bugs.
-Report a bug by [opening a new issue](../../issues/new/choose); it's that easy!
+Run these before opening a pull request. CI runs the same ones, and
+`pre-commit install` runs the first three on every commit.
 
-## Write bug reports with detail, background, and sample code
+```bash
+uv run ruff format .                                # format
+uv run ruff check . --fix                           # lint
+uv run mypy custom_components/samsung_climate_ir    # type-check
+uv run pytest                                       # tests, coverage must stay at 90 % or more
+```
 
-**Great Bug Reports** tend to have:
+Read [CODE_STYLE.md](CODE_STYLE.md) before adding or restructuring code.
 
-- A quick summary and/or background
-- Steps to reproduce
-  - Be specific!
-  - Give sample code if you can.
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
+## Infrared protocol
 
-## Use a Consistent Coding Style
+The encoder and decoder live in
+[`protocol/samsung_ac_command.py`](custom_components/samsung_climate_ir/protocol/samsung_ac_command.py),
+whose module docstring documents the frame layout. In short:
 
-The project uses [ruff](https://docs.astral.sh/ruff/) (config in `pyproject.toml`). Run `uv run ruff format --check .`, `uv run ruff check .` and `uv run mypy custom_components/samsung_climate_ir` before sending a PR.
+- A command is a 14-byte frame in two 7-byte sections, sent LSB first.
+- Power sits in byte 6 and again in byte 13. Both copies must agree when
+  decoding. Swing is in byte 9, the special fan feature (WindFree, Powerful,
+  Econo) and the display bit in byte 10, the temperature in byte 11, mode and
+  fan speed in byte 12.
+- Each section carries a checksum built from the inverted count of set bits.
+- The signal is a 550/17550 µs header, then for each section a 3000/9000 µs
+  section header and 56 bits (500 µs mark, 500 µs space for 0, 1500 µs space
+  for 1), with a 3000 µs gap between sections.
+- The decoder tolerates the timing skew of real receivers and accepts captures
+  that start without the leading header.
 
-## Test your code modification
+The template frame, field offsets, checksum and timings were validated byte
+for byte against captures from a physical Samsung remote. The golden tests in
+[`tests/protocol/test_samsung_ac_command.py`](tests/protocol/test_samsung_ac_command.py)
+and the captured timings in [`tests/protocol_fixtures.py`](tests/protocol_fixtures.py)
+guard them. Do not change any of them without new captures that prove the
+change.
 
-This template is based on [samsung_climate_ir template](https://github.com/ludeeus/samsung_climate_ir).
+## Pull requests
 
-It comes with a development environment in a container, easy to launch if you use Visual Studio Code. With this container you will have a stand-alone Home Assistant instance running and already configured with the included [`configuration.yaml`](./config/configuration.yaml) file.
+1. Fork the repository and branch from `main`.
+2. Write commit messages as [Conventional Commits](https://www.conventionalcommits.org/).
+   Releases and their notes are generated from them. Mark breaking changes
+   with `!` or a `BREAKING CHANGE:` footer.
+3. Update `translations/en.json` and `translations/pt-BR.json` together when
+   you change user-facing strings. `tests/test_translations.py` fails when
+   their keys differ.
+4. Update the README when behaviour, configuration or entities change.
+5. Fill in the pull request template.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under its MIT License.
+Contributions are released under the project's [MIT License](LICENSE).
